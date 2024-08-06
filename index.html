@@ -1,0 +1,71 @@
+<?php
+session_start();
+
+$admin_password = "i232ban34da";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['password']) && $_POST['password'] === $admin_password) {
+        $_SESSION['loggedin'] = true;
+    } elseif (isset($_POST['logout'])) {
+        session_destroy();
+        header("Location: index.php");
+    } elseif (isset($_POST['player_name']) && isset($_POST['reason']) && $_SESSION['loggedin']) {
+        $player_name = $_POST['player_name'];
+        $reason = $_POST['reason'];
+
+        // Database connection
+        $conn = new mysqli('localhost', 'root', '', 'ban_system');
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        $stmt = $conn->prepare("INSERT INTO banned_players (player_name, reason) VALUES (?, ?)");
+        $stmt->bind_param("ss", $player_name, $reason);
+        $stmt->execute();
+        $stmt->close();
+        $conn->close();
+    }
+}
+
+if (!isset($_SESSION['loggedin'])) {
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h2>Admin Login</h2>
+    <form method="POST" action="">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>
+<?php
+} else {
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ban Player</title>
+</head>
+<body>
+    <h2>Ban a Player</h2>
+    <form method="POST" action="">
+        <label for="player_name">Player Name:</label>
+        <input type="text" id="player_name" name="player_name" required>
+        <label for="reason">Reason:</label>
+        <input type="text" id="reason" name="reason" required>
+        <button type="submit">Ban Player</button>
+    </form>
+    <form method="POST" action="">
+        <input type="hidden" name="logout" value="1">
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>
+<?php
+}
+?>
